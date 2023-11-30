@@ -38,7 +38,7 @@ def set_schema(client):
     transit: string .
     connection: string @index(exact) .
     waitTime: int .
-    passenger: [uid] @count @reverse . 
+    passenger: [uid] @count . 
     """
     return client.alter(pydgraph.Operation(schema=schema))
 
@@ -134,48 +134,75 @@ def get_location_uid(txn, location_name):
     return None
 
 
-def analyze_connection(client):
-  query = """query analyze() {
-            result(func: type(Location)) {
-                name
-                ~toLocation {
-                    a as count(passenger @filter(eq(connection, true)))
-                }
-                total: sum(val(a))
-                }
-}"""
+def analyze_connection(client, city):
+   
+   if city == "":
+        query = """query analyze() {
+                result(func: type(Location)) {
+                    name
+                    ~toLocation {
+                        a as count(passenger @filter(eq(connection, true)))
+                    }
+                    total: sum(val(a))
+                    }
+            }"""
+   else:
+        query = """"
+query analyze() {
+    result(func: type(Location)) @filter(eq(name, "%s")) {
+        name
+        ~toLocation {
+            a as count(passenger @filter(eq(connection, true)))
+        }
+        total: sum(val(a))
+    }
+}
+""" % city
 
-  res = client.txn(read_only=True).query(query)
-  ppl = json.loads(res.json)
+   res = client.txn(read_only=True).query(query)
+   ppl = json.loads(res.json)
 
-  locations_data = ppl.get('result', [])
-  locations_all = analyze_all(client)
+   locations_data = ppl.get('result', [])
+   locations_all = analyze_all(client, city)
 
 # Print results.
-  for location_data, location_all in zip(locations_data, locations_all):
+   print("")
+   for location_data, location_all in zip(locations_data, locations_all):
         if location_data.get('name', '') == location_all.get('name', ''):
             name = location_data.get('name', '')
             total_no_passengers = location_data.get('total', 0)
             total_no_passengers_all = location_all.get('total', 0)
+        changeRate = (total_no_passengers / total_no_passengers_all) * 100
+        print(f"City: {name}, Total Passengers: {total_no_passengers}/{total_no_passengers_all} = {changeRate}% \n")
 
-        print(f"City: {name}, Total Passengers: {total_no_passengers}/{total_no_passengers_all}")
+def analyze_all(client, city):
+    
+    if(city == ""):
+        query = """query analyze() {
+                    result(func: type(Location)){
+                        name
+                        ~toLocation {
+                            a as count(passenger)
+                        }
+                        total: sum(val(a))
+                        }
+        }"""
+    else:
+        query = """query analyze() {
+                    result(func: type(Location)) @filter(eq(name, "%s")){
+                        name
+                        ~toLocation {
+                            a as count(passenger)
+                        }
+                        total: sum(val(a))
+                        }
+        }"""%city
 
-def analyze_all(client):
-  query = """query analyze() {
-            result(func: type(Location)) {
-                name
-                ~toLocation {
-                    a as count(passenger)
-                }
-                total: sum(val(a))
-                }
-}"""
+    res = client.txn(read_only=True).query(query)
+    ppl = json.loads(res.json)
 
-  res = client.txn(read_only=True).query(query)
-  ppl = json.loads(res.json)
-
-  locations_data = ppl.get('result', [])
-  return locations_data
+    locations_data = ppl.get('result', [])
+    return locations_data
 
 
 

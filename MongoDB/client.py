@@ -24,7 +24,7 @@ def print_flights(flight):
 def list_flight():
     print("Statistics for airports: ")
     option = input("Do you want statistics for a specific airport? (Y/N): ")
-    if(option == "Y"):
+    if(option == "Y" or option =="y"):
         airport = input("Name of airport: ")
     else: 
         airport = ""

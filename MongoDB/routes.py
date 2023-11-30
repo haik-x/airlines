@@ -10,8 +10,8 @@ router = APIRouter()
 @router.post("/", response_description="Post a new flight", status_code=status.HTTP_201_CREATED, response_model=Flight)
 def create_flight(request: Request, flight: Flight = Body(...)):
     flight = jsonable_encoder(flight)
-    new_flight = request.app.database["flight"].insert_one(flight)
-    created_flight = request.app.database["flight"].find_one(
+    new_flight = request.app.database["flights"].insert_one(flight)
+    created_flight = request.app.database["flights"].find_one(
         {"_id": new_flight.inserted_id}
     )
     return created_flight

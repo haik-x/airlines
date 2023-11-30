@@ -11,8 +11,9 @@ def print_menu():
     mm_options = {
         1: "Create data",
         2: "Airports and users with connections",
-        3: "Drop All",
-        4: "Exit",
+        3: "Airports and users with connections by specific city",
+        4: "Drop All",
+        5: "Exit",
     }
     for key in mm_options.keys():
         print(key, '--', mm_options[key])
@@ -48,10 +49,13 @@ def main():
             data_list = read_json(file_path)
             create_data(client, data_list)
         if option == 2:
-            analyze_connection(client)
+            analyze_connection(client,"")
         if option == 3:
-            drop_all(client)
+            city = input("Write the name of the city you want to analyze: ")
+            analyze_connection(client,city)
         if option == 4:
+            drop_all(client)
+        if option == 5:
             drop_all(client)
             close_client_stub(client_stub)
             exit(0)
